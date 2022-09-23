@@ -1,182 +1,217 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Platform, StatusBar, Dimensions } from 'react-native'
-import React, { useState } from 'react'
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
+  Dimensions,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import React, { useState } from "react";
+import { Formik } from "formik";
+import * as Yup from "yup";
+import client from "../api/client";
+import { useNavigation, StackActions } from "@react-navigation/native";
 
 const SignUpForm = () => {
-    const [userInfo, setuserInfo] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-    })
-    const handleChange = (name, value) => {
-        setuserInfo({
-            ...userInfo,
-            [name]: value,
-        })
+  const navigation = useNavigation();
+  const userInfo = {
+    fullname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  };
+  const validationSchema = Yup.object({
+    fullname: Yup.string()
+      .trim()
+      .min(3, "Invalid Name")
+      .required("Name  is required"),
+    email: Yup.string()
+      .trim()
+      .email("Invalid Email")
+      .required("Email is required"),
+    password: Yup.string()
+      .trim()
+      .min(8, "Password is too Short")
+      .required("Password is required"),
+    confirmPassword: Yup.string()
+      .trim()
+      .required("Confirm Password is required")
+      .oneOf([Yup.ref("password"), null], "Passwords must be match"),
+  });
 
-    }
-    const { name, email, password, confirmPassword } = userInfo;
+  const signUpHandler = async (values, actions) => {
+    // const { fullname, email, password ,confirmPassword} = values;
 
-    //..............................................................
-    
-    
-    // ............Every Validation Work Given Below
+    const res = await client.post("/create-user", {
+      ...values,
+    });
 
-    // given Below function Check the all filed are filled or not
-    const isValidObjField = (obj) => {
-        return Object.values(obj).every(val => val.trim())
-    }
+    if (res.data.sucsess) {
+      const signInResp = await client.post("/sign-in", {
+        email: values.email,
+        password: values.password,
+      });
 
-    const isValidEmail =(email)=>{
-        const regx = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/ ;
-        return regx.test(email)
-    }
-
-    const updateError = (error,stateUpdater)=>{
-        stateUpdater(error)
-        setTimeout(()=>{
-            stateUpdater('')
-        },2500)
-
-    }
-    const [error, setError] = useState('');
-
-    const IsValidForm = (userInfo)=>{
-        //we will accept only if the all field are filled
-        if(!isValidObjField(userInfo)){
-            return  updateError('All field are required',setError)
-        }
-        
-        //if valid name is more than 3 character
-        if(!userInfo.name.trim() || userInfo.name.length < 3 ){
-            
-            return updateError('Invalid Name',setError)
-        }
-        //if valid email is in correct format
-        if(!isValidEmail(userInfo.email)){
-            return updateError('Invalid Email',setError)
-        }
-        //if valid password is more than 8character
-        if(!userInfo.password.trim() || userInfo.password.length < 8){
-            return updateError('password must be more than 8 character',setError)
-        }
-
-        //if valid confirm password is equal to password
-        if(userInfo.password !== userInfo.confirmPassword){
-            return updateError('password not matched',setError)
-        }
-
-        return true
-
-    }
-    
-    
-    const handleSubmit = () => {
-        
-        if(IsValidForm(userInfo)){
-            console.log('valid form')
-        }
+      if (signInResp.data.sucsess) {
+        navigation.dispatch(
+          StackActions.replace("ProfileImageUploadScreen", {
+            token: signInResp.data.token,
+          })
+        );
+      }
     }
 
-    return (
-        <View style={styles.FormContainer}>
-            {
-                error ? <Text style={styles.error}>{error}</Text> : null
-            }
-            <InputField inputName="Name" value={name} placeholder='Name' onChangeText={
-                (text) => {
-                    handleChange('name', text)
-                }
-            } />
+    if (res.data.sucsess === false) {
+      Alert.alert(res.data.message);
+      return;
+    }
+    actions.resetForm();
+    actions.setSubmitting(false);
+  };
 
-            <InputField autoCapitalize='none'
-                inputName="Email" value={email}
-                placeholder='abc@gmail.com'
-                onChangeText={
-                    (text) => {
-                        handleChange('email', text)
-                    }
-                }
+  return (
+    <View style={styles.FormContainer}>
+      <Formik
+        initialValues={userInfo}
+        validationSchema={validationSchema}
+        onSubmit={signUpHandler}
+      >
+        {({
+          values,
+          errors,
+          handleBlur,
+          touched,
+          handleChange,
+          handleSubmit,
+          isSubmitting,
+        }) => {
+          const { fullname, email, password, confirmPassword } = values;
 
-            />
-            <InputField inputName="Password" value={password} placeholder='* * * * * * * * *' onChangeText={
-                (text) => {
-                    handleChange('password', text)
-                }
-            }
+          return (
+            <>
+              <InputField
+                onBlur={handleBlur("fullname")}
+                inputName="Name"
+                error={touched.fullname && errors.fullname}
+                value={fullname}
+                placeholder="Name"
+                onChangeText={handleChange("fullname")}
+              />
+
+              <InputField
+                onBlur={handleBlur("email")}
+                error={touched.email && errors.email}
+                autoCapitalize="none"
+                inputName="Email"
+                value={email}
+                placeholder="abc@gmail.com"
+                onChangeText={handleChange("email")}
+              />
+              <InputField
+                onBlur={handleBlur("password")}
+                error={touched.password && errors.password}
+                inputName="Password"
+                value={password}
+                placeholder="* * * * * * * * *"
+                onChangeText={handleChange("password")}
                 secureTextEntry={true}
-            />
-            <InputField inputName="Confirm Password" value={confirmPassword} placeholder='* * * * * * * * *' onChangeText={
-                (text) => {
-                    handleChange('confirmPassword', text)
-                }
-            }
+              />
+              <InputField
+                inputName="Confirm Password"
+                error={touched.confirmPassword && errors.confirmPassword}
+                onBlur={handleBlur("confirmPassword")}
+                value={confirmPassword}
+                placeholder="* * * * * * * * *"
+                onChangeText={handleChange("confirmPassword")}
                 secureTextEntry={true}
-            />
+              />
 
-            <TouchableOpacity onPress={() => { handleSubmit()}} style={styles.submit}>
+              <TouchableOpacity
+                onPress={!isSubmitting ? handleSubmit : null}
+                style={[
+                  styles.submit,
+                  {
+                    backgroundColor: isSubmitting ? "gray" : "black",
+                    flexDirection: "row",
+                  },
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : null}
                 <Text style={styles.submitText}>LogIn</Text>
-            </TouchableOpacity>
-        </View>
-    )
-}
+              </TouchableOpacity>
+            </>
+          );
+        }}
+      </Formik>
+    </View>
+  );
+};
 
-export default SignUpForm
+export default SignUpForm;
 
 const InputField = (props) => {
-    const { inputName, placeholder } = props;
-    return (
-        <View style={styles.inputContainer}>
-            <Text style={styles.inputName}>{inputName}</Text>
-            <TextInput style={styles.inputValue} {...props} placeholder={placeholder} placeholderTextColor='gray' />
-        </View>
-    )
-}
+  const { inputName, placeholder, error } = props;
+  return (
+    <View style={styles.inputContainer}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <Text style={styles.inputName}>{inputName}</Text>
+        <Text style={{ color: "red" }}>{error}</Text>
+      </View>
+      <TextInput
+        style={styles.inputValue}
+        {...props}
+        placeholder={placeholder}
+        placeholderTextColor="gray"
+      />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    FormContainer: {
-        width: Dimensions.get('window').width,
-        padding: 10,
-
-
-    },
-    inputContainer: {
-        width: "100%",
-        marginBottom: 10
-    },
-    inputName: {
-        fontSize: 18,
-        marginBottom: 10,
-        fontWeight: "bold",
-    },
-    inputValue: {
-        width: "100%",
-        borderWidth: 2,
-        borderRadius: 10,
-        padding: 5,
-        paddingHorizontal: 20,
-        fontSize: 18,
-    },
-    submit: {
-        width: "100%",
-        backgroundColor: 'black',
-        padding: 10,
-        borderRadius: 10,
-        alignItems: "center",
-        justifyContent: "center",
-    }
-    , submitText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "white",
-
-    },
-    error:{
-        color:'red',
-        fontSize:18,
-        fontWeight:'bold',
-        textAlign:'center'
-        
-    }
-
-})
+  FormContainer: {
+    width: Dimensions.get("window").width,
+    padding: 10,
+  },
+  inputContainer: {
+    width: "100%",
+    marginBottom: 10,
+  },
+  inputName: {
+    fontSize: 18,
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+  inputValue: {
+    width: "100%",
+    borderWidth: 2,
+    borderRadius: 10,
+    padding: 5,
+    paddingHorizontal: 20,
+    fontSize: 18,
+  },
+  submit: {
+    width: "100%",
+    backgroundColor: "black",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  submitText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+  },
+  error: {
+    color: "red",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+});

@@ -1,74 +1,100 @@
-import { StyleSheet, Text, View, Platform, StatusBar, ScrollView,Animated, Dimensions } from "react-native";
-import React, { useRef } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Platform,
+  StatusBar,
+  ScrollView,
+  Animated,
+  Dimensions,
+} from "react-native";
+import React, { useRef, useEffect } from "react";
 import Heading from "../Component/Heading";
 import LoginButton from "../Component/LoginButton";
-import LogInForm from "../Component/Form";
+import LogInForm from "../Component/SignIn/SignInForm";
 import SignUpForm from "../Component/SignUpForm";
 
 const LogInAndSignInScreen = () => {
   const animation = useRef(new Animated.Value(0)).current;
   const scrollView = useRef();
-  const {width} = Dimensions.get('window');
-  
+  const { width } = Dimensions.get("window");
+
+  // const fetchApi = async () => {
+  //   try {
+  //     const res = await axios.get("http://192.168.0.107:8000");
+  //     console.log(res.data)
+
+  //   } catch (error) {
+  //     console.log(error.message);
+  //   }
+  // }
+
+  // useEffect(() => {
+  //   fetchApi();
+  // }, [])
+
   const rightHeaderOpacity = animation.interpolate({
     inputRange: [0, width],
     outputRange: [1, 0],
-  })
+  });
   const rightHeaderTranslateY = animation.interpolate({
     inputRange: [0, width],
     outputRange: [0, -20],
-  })
+  });
   const leftHeaderTranslateX = animation.interpolate({
     inputRange: [0, width],
     outputRange: [0, 40],
-  })
+  });
   const loginColor = animation.interpolate({
     inputRange: [0, width],
-    outputRange: ['black', 'gray'],
-  })
+    outputRange: ["black", "gray"],
+  });
   const signupColor = animation.interpolate({
     inputRange: [0, width],
-    outputRange: [ 'gray','black'],
-  })
+    outputRange: ["gray", "black"],
+  });
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
-        <Heading rightHeaderOpacity={rightHeaderOpacity} 
-        rightHeaderTranslateY={rightHeaderTranslateY}
-        leftHeaderTranslateX={leftHeaderTranslateX}
+        <Heading
+          rightHeaderOpacity={rightHeaderOpacity}
+          rightHeaderTranslateY={rightHeaderTranslateY}
+          leftHeaderTranslateX={leftHeaderTranslateX}
         />
         <View style={styles.Container1}>
-        <LoginButton bgColor={loginColor} title='LogIn' 
-        onPress={()=>{scrollView.current.scrollTo({x:0})}}
-        border1={{borderTopLeftRadius:10,borderBottomLeftRadius:10,}}
-        />
-        <LoginButton bgColor={signupColor} title='SignUp'
-        onPress={()=>{scrollView.current.scrollTo({x:width})}}
-      
-        border1={{borderTopRightRadius:10,borderBottomRightRadius:10,}}
-        />
-
+          <LoginButton
+            bgColor={loginColor}
+            title="LogIn"
+            onPress={() => {
+              scrollView.current.scrollTo({ x: 0 });
+            }}
+            border1={{ borderTopLeftRadius: 10, borderBottomLeftRadius: 10 }}
+          />
+          <LoginButton
+            bgColor={signupColor}
+            title="SignUp"
+            onPress={() => {
+              scrollView.current.scrollTo({ x: width });
+            }}
+            border1={{ borderTopRightRadius: 10, borderBottomRightRadius: 10 }}
+          />
         </View>
-        
 
-
-        <ScrollView 
-        ref={scrollView}
-        horizontal={true} 
-        style={styles.scrollContainer}
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll = {Animated.event(
-          [{nativeEvent:{contentOffset:{x:animation}}}],
-          {useNativeDriver:false}
-        )}
-         >
-        <LogInForm/>
-        <ScrollView>
-        <SignUpForm/>
-        </ScrollView>
-        
-        
+        <ScrollView
+          ref={scrollView}
+          horizontal={true}
+          style={styles.scrollContainer}
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: animation } } }],
+            { useNativeDriver: false }
+          )}
+        >
+          <LogInForm />
+          <ScrollView>
+            <SignUpForm />
+          </ScrollView>
         </ScrollView>
       </View>
     </View>
@@ -85,31 +111,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     // width: "100%",
-    
   },
-  Container1:{
+  Container1: {
     width: "100%",
-    
+
     flexDirection: "row",
     borderRadius: 10,
     padding: 10,
-    
-    
-
-
-
-},
-  formContainer:{
-    width: "100%",
-    
-
   },
-  scrollContainer:{
+  formContainer: {
     width: "100%",
-    
+  },
+  scrollContainer: {
+    width: "100%",
+
     flexDirection: "row",
     paddingVertical: 20,
-    
-    
-  }
+  },
 });

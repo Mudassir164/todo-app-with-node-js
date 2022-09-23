@@ -1,7 +1,16 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import LogInAndSignInScreen from "./Screen/LogInAndSignInScreen";
+import React from "react";
+
+import { NavigationContainer } from "@react-navigation/native";
+
+import LogInProvider from "./Context/ContextApi";
+import MainNavigation from "./Navigation/RootNavigation";
 
 export default function App() {
-  return <LogInAndSignInScreen />;
+  return (
+    <LogInProvider>
+      <NavigationContainer>
+        <MainNavigation />
+      </NavigationContainer>
+    </LogInProvider>
+  );
 }
